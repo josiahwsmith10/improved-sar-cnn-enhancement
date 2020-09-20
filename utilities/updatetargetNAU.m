@@ -43,7 +43,7 @@ else
     twoR = 2*target.R;
     isAmplitudeFactor = target.isAmplitudeFactor;
     if isAmplitudeFactor
-        one_by_R_squared = target.R.^2;
+        amplitudeFactor = target.amp./(target.R).^2;
     end
     
     k = fmcw.k;
@@ -56,7 +56,7 @@ else
     for indK = 1:fmcw.ADCSamples
         temp = exp(1j*k(indK)*twoR);
         if isAmplitudeFactor
-            temp = one_by_R_squared .* temp;
+            temp = amplitudeFactor .* temp;
         end
         sarData(:,indK) = sum(temp,2);
         

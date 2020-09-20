@@ -12,7 +12,7 @@ function target = gettarget2DrandNAU(target,im,fig)
 %% Create the target locations and amplitudes
 target.numTarget = randi(target.numTargetMax);
 target.xyz_m = single([im.x_m(1) + (im.x_m(end)-im.x_m(1))*rand(target.numTarget,1),im.x_m(1) + (im.y_m(end)-im.y_m(1))*rand(target.numTarget,1),target.zOffset_m*ones(target.numTarget,1)]);
-target.amp = target.ampMin + (target.ampMax-target.ampMin)*rand(target.numTarget,1);
+target.amp = target.ampMin + (target.ampMax-target.ampMin)*rand(1,target.numTarget);
 
 %% Create the ideal reflectivity function
 target.ideal2D = single(zeros(im.numX,im.numY));

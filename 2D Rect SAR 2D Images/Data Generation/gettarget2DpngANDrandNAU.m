@@ -36,6 +36,8 @@ png.xyz_m = reshape(permute(png.xyz_m,[1 3 2]),[],3);
 indT = rot90(tMatrix,-1)==true;
 png.xyz_m = single(png.xyz_m(indT,:));
 
+png.xyz_m = downsample(png.xyz_m,2);
+
 png.numTarget = size(png.xyz_m,1);
 png.amp = ones(png.numTarget,1);
 
@@ -53,22 +55,19 @@ target.numTarget = randi(target.numTargetMax);
 fail = true;
 
 tic
+target.xyz_m = single([im.x_m(1) + (im.x_m(end)-im.x_m(1))*rand(target.numTarget,1),im.x_m(1) + (im.y_m(end)-im.y_m(1))*rand(target.numTarget,1),target.zOffset_m*ones(target.numTarget,1)]);
 while fail
-    target.xyz_m = single([im.x_m(1) + (im.x_m(end)-im.x_m(1))*rand(target.numTarget,1),im.x_m(1) + (im.y_m(end)-im.y_m(1))*rand(target.numTarget,1),target.zOffset_m*ones(target.numTarget,1)]);
     target.amp = target.ampMin + (target.ampMax-target.ampMin)*rand(target.numTarget,1);
     R = pdist2(png.xyz_m,target.xyz_m);
     if min(R,[],'all') > 3e-3
         fail = false;
     else
         indGood = min(R,[],1)>3e-3;
-        numGood = sum(indGood);
         xyz_m_good = target.xyz_m(indGood,:);
         xyz_m_new = single([im.x_m(1) + (im.x_m(end)-im.x_m(1))*rand(target.numTarget-size(xyz_m_good,1),1),im.x_m(1) + (im.y_m(end)-im.y_m(1))*rand(target.numTarget-size(xyz_m_good,1),1),target.zOffset_m*ones(target.numTarget-size(xyz_m_good,1),1)]);
         target.xyz_m = cat(1,xyz_m_good,xyz_m_new);
-        disp(target.numTarget - numGood + 
         
         if toc > 10
-            warning("bruh")
             indGood = min(R,[],1)>3e-3;
             target.xyz_m = target.xyz_m(indGood,:);
             target.amp = target.amp(indGood);
@@ -85,11 +84,13 @@ for indTarget = 1:target.numTarget
     temp = temp*target.amp(indTarget)/max(temp(:));
     target.ideal2D = target.ideal2D + temp;
 end
+target.ideal2D = target.ideal2D/max(target.amp);
 target.ideal2D(target.ideal2D>1) = 1;
 target.ideal2D(target.ideal2D<0) = 0;
 
 target.ideal2D = target.ideal2D + png.ideal2D;
 target.xyz_m = cat(1,target.xyz_m,png.xyz_m);
+target.amp = cat(1,target.amp,png.amp/16)';
 target.numTarget = target.numTarget + png.numTarget;
 
 %% Show the reflectivity function
