@@ -37,16 +37,18 @@ im.y_m = linspace(0.1/im.numY-0.05,0.05,im.numY)';
 
 %% Create target from png and random points
 %-------------------------------------------------------------------------%
-target.numTargetMax = 64;
+target.numTargetMax = 25;
 target.xStep_m = 0.5e-3;
 target.yStep_m = 0.5e-3;
-target.xOffset_m = -0.0125; %-0.0125,0.0125
-target.yOffset_m = 0.025; %-0.025,0.025
+target.xOffset_m = -0.01; %-0.01,0.01
+target.yOffset_m = 0.02; %-0.02,0.02
 target.zOffset_m = 0;
 target.o_x = 2e-3;
 target.o_y = 2e-3;
 target.ampMin = 0.5;
 target.ampMax = 1;
+target.ampAdjust = 0.65;
+target.downSample = 4;
 target = gettarget2DpngANDrandNAU("triangle.png",target,im,fig);
 showImScenarioNAU(target,sar,fig);
 

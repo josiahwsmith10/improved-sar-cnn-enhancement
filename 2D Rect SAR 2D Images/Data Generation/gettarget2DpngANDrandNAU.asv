@@ -12,7 +12,6 @@ function target = gettarget2DpngANDrandNAU(filename,target,im,fig)
 %       o_y
 %       ampMin
 %       ampMax
-%       ampAdjust
 
 %% Load the iamge in
 tMatrix = imread(filename);
@@ -43,7 +42,7 @@ png.xyz_m = reshape(permute(png.xyz_m,[1 3 2]),[],3);
 indT = rot90(tMatrix,-1)==true;
 png.xyz_m = single(png.xyz_m(indT,:));
 
-png.xyz_m = downsample(png.xyz_m,target.downSample);
+% png.xyz_m = downsample(png.xyz_m,2);
 
 png.numTarget = size(png.xyz_m,1);
 png.amp = ones(png.numTarget,1);
@@ -59,13 +58,13 @@ png.amp = ones(png.numTarget,1);
 
 png.ideal2D = single(zeros(im.numX,im.numY));
 for indTarget = 1:png.numTarget
-    temp = single(exp(-(target.o_x)^(-2)*(im.x_m-png.xyz_m(indTarget,1)).^2-(target.o_y)^(-2)*(im.y_m-png.xyz_m(indTarget,2)).^2));
+    temp = single(exp(-(5e-3)^(-2)*(im.x_m-png.xyz_m(indTarget,1)).^2-(5e-3)^(-2)*(im.y_m-png.xyz_m(indTarget,2)).^2));
     temp = temp/max(temp(:));
     png.ideal2D = png.ideal2D + temp;
 end
 png.maxpng = max(png.ideal2D(:));
 png.ideal2D = png.ideal2D/png.maxpng;
-png.amp = png.amp/png.maxpng*target.ampAdjust;
+png.amp = png.amp/png.maxpng;
 
 %% Create the target locations and amplitudes
 target.numTarget = randi(target.numTargetMax);
