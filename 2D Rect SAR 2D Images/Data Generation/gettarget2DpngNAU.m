@@ -7,6 +7,8 @@ function target = gettarget2DpngNAU(filename,target,im,fig)
 %       xOffset_m
 %       yOffset_m
 %       zOffset_m
+%       ampAdjust
+%       downSample
 
 %% Load the iamge in
 tMatrix = imread(filename);
@@ -31,21 +33,28 @@ target.xyz_m = reshape(permute(target.xyz_m,[1 3 2]),[],3);
 indT = rot90(tMatrix,-1)==true;
 target.xyz_m = single(target.xyz_m(indT,:));
 
+target.xyz_m = downsample(target.xyz_m,target.downSample);
+
 target.numTarget = size(target.xyz_m,1);
 target.amp = ones(target.numTarget,1);
 
-%% Fit reflectivity image to im domain
-tMatrix_im = interp2(xAxisT,yAxisT,imgaussfilt(single(flip(tMatrix,1)),1.5),im.x_m,im.y_m,'spline',0);
-tMatrix_im = imgaussfilt(tMatrix_im,1);
-tMatrix_im = tMatrix_im/max(tMatrix_im(:));
-tMatrix_im(tMatrix_im>1) = 1;
-tMatrix_im(tMatrix_im<0) = 0;
+%% Create ideal reflectivity function for png
+target.ideal2D = single(zeros(im.numX,im.numY));
+for indTarget = 1:target.numTarget
+    temp = single(exp(-(target.o_x)^(-2)*(im.x_m-target.xyz_m(indTarget,1)).^2-(target.o_y)^(-2)*(im.y_m-target.xyz_m(indTarget,2)).^2));
+    temp = temp/max(temp(:));
+    target.ideal2D = target.ideal2D + temp;
+end
+target.maxpng = max(target.ideal2D(:));
+target.ideal2D = target.ideal2D/target.maxpng;
 
-target.ideal2D = tMatrix_im;
+% Adjust the amplitudes of the png to make sure the energy of the png does
+% not dwarf the point targets' energy
+target.amp = target.amp/target.maxpng*target.ampAdjust;
 
 %% Show the reflectivity function
 h = fig.Target2D.h;
-mesh(h,im.x_m,im.y_m,target.ideal2D,'FaceColor','interp')
+mesh(h,im.x_m,im.y_m,target.ideal2D','FaceColor','interp')
 view(h,2)
 xlabel(h,"x (m)")
 ylabel(h,"y (m)")

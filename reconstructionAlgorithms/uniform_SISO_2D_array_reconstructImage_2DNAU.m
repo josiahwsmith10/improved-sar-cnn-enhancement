@@ -1,4 +1,4 @@
-function im = uniform_SISO_2D_array_reconstructImage_2DNAU(sarData,target,fmcw,ant,sar,im)
+function im = uniform_SISO_2D_array_reconstructImage_2DNAU(sarData,target,fmcw,ant,sar,im,fig)
 % sarData is of size (sar.numY, sar.numX, fmcw.ADCSamples)
 
 k = reshape(fmcw.k,1,1,[]);
@@ -43,11 +43,11 @@ end
 im.sarImage = interpn(x_m,y_m,sarImage,im.x_m,im.y_m,'spline',0);
 % im.sarImage = imresize(sarImage(indX,indY),[im.numX,im.numY]);
 
-figure
-mesh(im.x_m,im.y_m,im.sarImage','FaceColor','interp')
-xlabel("x (m)")
-ylabel("y (m)")
-xlim([im.x_m(1),im.x_m(end)])
-ylim([im.y_m(1),im.y_m(end)])
-title("Reconstructed Image");
-view(2)
+h = fig.SAR2D.h;
+mesh(h,im.x_m,im.y_m,im.sarImage','FaceColor','interp')
+xlabel(h,"x (m)")
+ylabel(h,"y (m)")
+xlim(h,[im.x_m(1),im.x_m(end)])
+ylim(h,[im.y_m(1),im.y_m(end)])
+title(h,"Reconstructed Image");
+view(h,2)

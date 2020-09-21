@@ -28,3 +28,7 @@ fig.ImScenarioVirtualAxes.h = handle(axes);
 % Target2D
 fig.Target2D.f = figure;
 fig.Target2D.h = handle(axes);
+
+% SAR2D
+fig.SAR2D.f = figure;
+fig.SAR2D.h = handle(axes);

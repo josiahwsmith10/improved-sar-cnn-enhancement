@@ -13,6 +13,7 @@ function target = gettarget2DpngANDrandNAU(filename,target,im,fig)
 %       ampMin
 %       ampMax
 %       ampAdjust
+%       downSample
 
 %% Load the iamge in
 tMatrix = imread(filename);
@@ -30,12 +31,6 @@ xAxisT = xAxisT + target.xOffset_m;
 yAxisT = yAxisT + target.yOffset_m;
 zAxisT = target.zOffset_m;
 
-% x = xAxisT(1):1e-3:xAxisT(end);
-% y = yAxisT(1):1e-3:yAxisT(end);
-% tMatrix = interpn(yAxisT,xAxisT,single(tMatrix),y,x') > 0.5;
-% xAxisT = x;
-% yAxisT = y;
-
 [zT,xT,yT] = meshgrid(zAxisT,xAxisT,yAxisT);
 png.xyz_m = [xT,yT,zT]; % xPoint x 3 (x-y-z) x yPoint;
 png.xyz_m = reshape(permute(png.xyz_m,[1 3 2]),[],3);
@@ -48,15 +43,7 @@ png.xyz_m = downsample(png.xyz_m,target.downSample);
 png.numTarget = size(png.xyz_m,1);
 png.amp = ones(png.numTarget,1);
 
-%% Fit reflectivity image to im domain
-% tMatrix_im = interp2(xAxisT,yAxisT,imgaussfilt(single(flip(tMatrix,1)),1.5),im.x_m,im.y_m,'spline',0);
-% tMatrix_im = imgaussfilt(tMatrix_im,1);
-% tMatrix_im = tMatrix_im/max(tMatrix_im(:));
-% tMatrix_im(tMatrix_im>1) = 1;
-% tMatrix_im(tMatrix_im<0) = 0;
-% 
-% png.ideal2D = tMatrix_im;
-
+%% Create ideal reflectivity function for png
 png.ideal2D = single(zeros(im.numX,im.numY));
 for indTarget = 1:png.numTarget
     temp = single(exp(-(target.o_x)^(-2)*(im.x_m-png.xyz_m(indTarget,1)).^2-(target.o_y)^(-2)*(im.y_m-png.xyz_m(indTarget,2)).^2));
@@ -65,6 +52,9 @@ for indTarget = 1:png.numTarget
 end
 png.maxpng = max(png.ideal2D(:));
 png.ideal2D = png.ideal2D/png.maxpng;
+
+% Adjust the amplitudes of the png to make sure the energy of the png does
+% not dwarf the point targets' energy
 png.amp = png.amp/png.maxpng*target.ampAdjust;
 
 %% Create the target locations and amplitudes
@@ -77,7 +67,7 @@ while fail
     target.amp = target.ampMin + (target.ampMax-target.ampMin)*rand(target.numTarget,1);
     R = pdist2(png.xyz_m,target.xyz_m);
     R_same = pdist2(target.xyz_m,target.xyz_m) + 1e3*eye(target.numTarget);
-    indGood = min(R,[],1)>5e-3 & min(R_same,[],1)>5e-3;
+    indGood = min(R,[],1)>(target.o_x*2) & min(R_same,[],1)>(target.o_x*2);
     numGood = sum(indGood);
     if numGood == target.numTarget
         fail = false;
@@ -87,14 +77,14 @@ while fail
         target.xyz_m = cat(1,xyz_m_good,xyz_m_new);
         
         if toc > 10
-            indGood = min(R,[],1)>5e-3;
+            indGood = min(R,[],1)>(target.o_x*2);
             target.xyz_m = target.xyz_m(indGood,:);
             target.amp = target.amp(indGood);
             target.numTarget = sum(indGood);
-            return;
+            warning("Could not place targets correctly in 10s, reducing number of targets")
+            break;
         end
     end
-%     disp("numTarget = " + target.numTarget + ", numGood =" + sum(min(R_same,[],1)>5e-3));
 end
 
 %% Create the ideal reflectivity function
@@ -104,9 +94,7 @@ for indTarget = 1:target.numTarget
     temp = temp*target.amp(indTarget)/max(temp(:));
     target.ideal2D = target.ideal2D + temp;
 end
-% [max(target.ideal2D(:)),max(target.amp)]
-% abs(max(target.ideal2D(:))-max(target.amp))
-if abs(max(target.ideal2D(:))-max(target.amp)) > 3e-3
+if abs(max(target.ideal2D(:))-max(target.amp)) > 3e-2
     warning("Amplitude error! The ideal image is distorted!")
 end
 target.ideal2D(target.ideal2D>1) = 1;
@@ -119,7 +107,7 @@ target.numTarget = target.numTarget + png.numTarget;
 
 %% Show the reflectivity function
 h = fig.Target2D.h;
-mesh(h,im.x_m,im.y_m,target.ideal2D,'FaceColor','interp')
+mesh(h,im.x_m,im.y_m,target.ideal2D','FaceColor','interp')
 view(h,2)
 xlabel(h,"x (m)")
 ylabel(h,"y (m)")
